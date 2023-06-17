@@ -6,7 +6,7 @@ const maxPostPage = 10;
 
 async function fetchPosts() {
   const response = await fetch(
-    "https://jsonplaceholder.typicode.com/posts?_limit=10&_page=0"
+    "https://jsonplacㄴㄴㄴㄴeholder.typicode.com/posts?_limit=10&_page=0"
   );
   return response.json();
 }
@@ -16,8 +16,15 @@ export function Posts() {
   const [selectedPost, setSelectedPost] = useState(null);
 
   // replace with useQuery
-  const { data } = useQuery("posts", fetchPosts);
-  if (!data) return <div />;
+  const { data, isError, error, isLoading } = useQuery("posts", fetchPosts);
+  if (isLoading) return <h3>Loading...</h3>;
+  if (isError)
+    return (
+      <>
+        <h3>오류가 발생했습니다.</h3>
+        <p>{error.toString()}</p>
+      </>
+    );
 
   return (
     <>
