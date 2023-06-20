@@ -1,6 +1,7 @@
 import InfiniteScroll from "react-infinite-scroller";
 import { useInfiniteQuery } from "react-query";
 import { Person } from "./Person";
+import { useEffect } from "react";
 
 const initialUrl = "https://swapi.dev/api/people/";
 const fetchUrl = async (url) => {
@@ -25,6 +26,10 @@ export function InfinitePeople() {
       getNextPageParam: (lastPage) => lastPage.next || undefined,
     }
   );
+
+  useEffect(() => {
+    console.log(data);
+  }, [data]);
 
   if (isLoading) return <div className="loading">Loading...</div>;
   if (isError) return <div>Error! {error.toString()}</div>;
