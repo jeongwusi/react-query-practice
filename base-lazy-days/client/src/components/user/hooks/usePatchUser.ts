@@ -1,8 +1,9 @@
 import jsonpatch from 'fast-json-patch';
-import { UseMutateFunction, useMutation } from 'react-query';
+import { UseMutateFunction, useMutation, useQueryClient } from 'react-query';
 
 import type { User } from '../../../../../shared/types';
 import { axiosInstance, getJWTHeader } from '../../../axiosInstance';
+import { queryKeys } from '../../../react-query/constants';
 import { useCustomToast } from '../../app/hooks/useCustomToast';
 import { useUser } from './useUser';
 
@@ -30,14 +31,35 @@ async function patchUserOnServer(
 export function usePatchUser(): UseMutateFunction<
   User,
   unknown,
-  User,
+  void,
   unknown
 > {
   const { user, updateUser } = useUser();
   const toast = useCustomToast();
+  const queryClient = useQueryClient();
 
   const { mutate: patchUser } = useMutation(
     (newUserData: User) => patchUserOnServer(newUserData, user),
+    {
+      onMutate: async (newData: User | null) => {
+        queryClient.cancelQueries(queryKeys.user);
+
+        const previousUserData: User = queryClient.getQueryData(queryKeys.user);
+
+        updateUser(newData);
+
+        return { previousUserData };
+      },
+      onError: (error, newData, context) => {
+        if (context.previousUserData) {
+          updateUser(context.previousUserData);
+          toast({
+            title: '업데이트가 실패하였습니다.',
+            status: 'warning',
+          });
+        }
+      },
+    },
     {
       onSuccess: (userData: User | null) => {
         if (user) {
@@ -47,6 +69,9 @@ export function usePatchUser(): UseMutateFunction<
             status: 'success',
           });
         }
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries(queryKeys.user);
       },
     },
   );
